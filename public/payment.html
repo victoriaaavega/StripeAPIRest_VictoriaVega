@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario de Pago</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+
+        label {
+            display: block;
+            margin: 0.5rem 0 0.2rem;
+            color: #555;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #007bff;
+            color: #fff;
+            font-size: 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .total {
+            font-weight: bold;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-size: 1.2rem;
+            color: #222;
+        }
+
+        .paid {
+            color: green;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Formulario de Pago</h2>
+        <div class="total" id="totalAmount">Total: $0.00</div>
+        <div class="paid" id="paidMessage" style="display:none;">Este pago ya fue completado</div>
+        <form id="paymentForm">
+            <label for="cardNumber">Número de Tarjeta:</label>
+            <input type="text" id="cardNumber" required>
+
+            <label for="cardExpiry">Fecha de Expiración:</label>
+            <input type="text" id="cardExpiry" required>
+
+            <label for="cardCVC">CVC:</label>
+            <input type="text" id="cardCVC" required>
+
+            <button type="submit">Pagar</button>
+        </form>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const paymentId = urlParams.get('paymentid');
+
+        const totalElement = document.getElementById('totalAmount');
+        const paidMessage = document.getElementById('paidMessage');
+        const paymentForm = document.getElementById('paymentForm');
+
+        // Obtener la información del pago
+        async function fetchPayment() {
+            try {
+                const res = await fetch(`http://localhost:3000/api/payments/${paymentId}`);
+                const payment = await res.json();
+
+                totalElement.textContent = `Total: $${payment.amount} ${payment.currency}`;
+
+                if (payment.status === 'completed') {
+                    paidMessage.style.display = 'block';
+                    paymentForm.style.display = 'none'; // ocultar formulario si ya se pagó
+                } else {
+                    paidMessage.style.display = 'none';
+                    paymentForm.style.display = 'block';
+                }
+
+                return payment;
+            } catch (err) {
+                totalElement.textContent = `Total: No disponible`;
+                console.error(err);
+            }
+        }
+
+        fetchPayment();
+
+        // Manejar el submit del formulario
+        paymentForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const response = await fetch(`http://localhost:3000/api/payments/${paymentId}`, { method: 'PUT' });
+                const data = await response.json();
+
+                if (data.payment && data.payment.status === 'completed') {
+                    alert(`Pago procesado exitosamente: $${data.payment.amount} ${data.payment.currency}`);
+                    paidMessage.style.display = 'block';
+                    paymentForm.style.display = 'none';
+                } else {
+                    alert(data.message || 'Pago procesado');
+                }
+
+            } catch (err) {
+                alert('Error procesando el pago');
+                console.error(err);
+            }
+        });
+    </script>
+</body>
+
+</html>
