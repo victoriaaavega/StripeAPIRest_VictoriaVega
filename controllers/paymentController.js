@@ -9,7 +9,7 @@ const createPayment = async (req, res) => {
     }
     const payment = await paymentDAO.createPayment(amount, currency);
 
-    res.json({ paymentLink: ´http://localhost:3000/payment.html?paymentid=${payment._id}´ });
+    res.json({ paymentLink: `http://localhost:3000/payment.html?paymentid=${payment._id}` });
 }
 
 const processPayment = async(req, res) => {
